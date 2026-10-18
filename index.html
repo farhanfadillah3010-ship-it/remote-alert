@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Status</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      inset: 0;
+      background: #990000;
+      z-index: 99;
+      animation: flash 0.5s infinite alternate;
+    }
+    h1 { font-size: 3rem; letter-spacing: 5px; margin: 0; }
+    p { font-size: 1.2rem; margin-top: 10px; }
+    @keyframes flash {
+      from { background: #500; }
+      to { background: #f00; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="overlay">
+    <h1>DANGER</h1>
+    <p>SYSTEM BREACH DETECTED</p>
+  </div>
+
+  <div id="idle" style="color: #444; font-size: 0.9rem;">
+    Loading resource...
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const overlay = document.getElementById('overlay');
+    const idle = document.getElementById('idle');
+
+    let audioCtx = null;
+    let osc = null;
+
+    function playAlarm() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (osc) return;
+
+      osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      
+      setInterval(() => {
+        if (!osc) return;
+        osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+        osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.6);
+      }, 600);
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+    }
+
+    function stopAlarm() {
+      if (osc) {
+        osc.stop();
+        osc.disconnect();
+        osc = null;
+      }
+    }
+
+    socket.on('remote-action', (data) => {
+      if (data.action === 'trigger') {
+        overlay.style.display = 'flex';
+        idle.style.display = 'none';
+        if (data.sound) playAlarm();
+        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500]);
+      } else if (data.action === 'dismiss') {
+        overlay.style.display = 'none';
+        idle.style.display = 'block';
+        stopAlarm();
+      }
+    });
+  </script>
+</body>
+</html>
