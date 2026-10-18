@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remote Control Panel</title>
+  <style>
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    button {
+      padding: 20px 40px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 80%;
+      max-width: 300px;
+    }
+    #btn-trigger { background: #d00; color: #fff; }
+    #btn-dismiss { background: #0aa; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>COMMAND PANEL</h2>
+  <button id="btn-trigger" onclick="triggerAlert()">TRIGGER DANGER</button>
+  <button id="btn-dismiss" onclick="dismissAlert()">NONAKTIFKAN</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    function triggerAlert() {
+      socket.emit('control-command', { action: 'trigger', sound: true });
+    }
+
+    function dismissAlert() {
+      socket.emit('control-command', { action: 'dismiss' });
+    }
+  </script>
+</body>
+</html>
